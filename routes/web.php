@@ -6,14 +6,16 @@ use App\Http\Controllers\DashboardController;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
 
-// Welcome page with inventory statistics
+// Instant login experience: root redirects to login or to appropriate page if authenticated
 Route::get('/', function () {
-    $stats = [
-        'total_items' => \App\Models\Item::count(),
-        'total_requests' => \App\Models\PurchaseRequest::count(),
-        'total_users' => \App\Models\User::count(),
-    ];
-    return view('welcome', compact('stats'));
+    if (Auth::check()) {
+        $user = Auth::user();
+        if ($user->hasRole('employee')) {
+            return redirect()->route('purchase-requests.create');
+        }
+        return redirect()->route('dashboard');
+    }
+    return redirect()->route('login');
 });
 
 // Authentication routes with email verification
@@ -83,7 +85,4 @@ Route::middleware(['auth' /* , 'verified' */])->group(function () {
         \App\Http\Controllers\PurchaseRequestController::class, 'rejectWorkflow'
     ])->name('purchase-requests.reject-workflow');
 });
-
-Auth::routes();
-
-Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
+// Remove duplicate Auth::routes and legacy /home

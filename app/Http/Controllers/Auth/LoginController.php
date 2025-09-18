@@ -25,7 +25,15 @@ class LoginController extends Controller
      *
      * @var string
      */
-    protected $redirectTo = '/home';
+    protected $redirectTo = '/dashboard';
+
+    protected function authenticated($request, $user)
+    {
+        if ($user->hasRole('employee')) {
+            return redirect()->route('purchase-requests.create');
+        }
+        return redirect()->route('dashboard');
+    }
 
     /**
      * Create a new controller instance.

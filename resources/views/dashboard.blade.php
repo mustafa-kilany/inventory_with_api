@@ -35,6 +35,37 @@
         </div>
     </div>
 
+    {{-- General Charts Section for All Users --}}
+    @if(isset($chart_data))
+    <script>
+        window.chartData = @json($chart_data);
+    </script>
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-bar-chart"></i> Stock Status Overview</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="generalStockStatusChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-tags"></i> Top Categories</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="generalCategoriesChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="{{ asset('js/general-dashboard-charts.js') }}"></script>
+    <script src="{{ asset('js/role-dashboard-charts.js') }}"></script>
+    @endif
+
     @if(auth()->user()->isEmployee())
         @include('dashboard.employee')
     @elseif(auth()->user()->isApprover())

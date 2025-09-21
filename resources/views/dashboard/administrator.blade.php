@@ -226,6 +226,60 @@
     </div>
 </div>
 
+<!-- Charts Section -->
+@if(isset($chart_data))
+<script>
+    window.chartData = @json($chart_data);
+</script>
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-pie-chart"></i> Request Priority Distribution</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="priorityChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-bar-chart"></i> Stock Status Overview</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="stockStatusChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-graph-up"></i> Monthly Request Trends</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="monthlyTrendsChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-tags"></i> Top Categories</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="categoriesChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{{ asset('js/dashboard-charts.js') }}"></script>
+@endif
+
 <div class="row mt-4">
     <div class="col-md-12">
         <div class="card">

@@ -65,6 +65,32 @@
     </div>
 </div>
 
+{{-- Charts Section for Stock Keeper --}}
+@if(isset($chart_data))
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-pie-chart"></i> Stock Status Distribution</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="stockKeeperStockStatusChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-graph-up"></i> Monthly Request Trends</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="stockKeeperMonthlyTrendsChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
+
 @if($out_of_stock_items->count() > 0)
 <div class="row mb-4">
     <div class="col-12">

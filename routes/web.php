@@ -84,5 +84,20 @@ Route::middleware(['auth' /* , 'verified' */])->group(function () {
     Route::post('/purchase-requests/{purchaseRequest}/reject-workflow', [
         \App\Http\Controllers\PurchaseRequestController::class, 'rejectWorkflow'
     ])->name('purchase-requests.reject-workflow');
+    
+    Route::post('/purchase-requests/{purchaseRequest}/add-stock', [
+        \App\Http\Controllers\PurchaseRequestController::class, 'addStockToItems'
+    ])->name('purchase-requests.add-stock')->middleware('permission:approve as purchase department');
+    
+    // Purchase Department Stock Management Routes
+    Route::prefix('purchase-department')->name('purchase-department.')->middleware('permission:approve as purchase department')->group(function () {
+        Route::get('/', [\App\Http\Controllers\PurchaseDepartmentController::class, 'index'])->name('index');
+        Route::get('/search', [\App\Http\Controllers\PurchaseDepartmentController::class, 'search'])->name('search');
+        Route::get('/items/{item}/add-stock', [\App\Http\Controllers\PurchaseDepartmentController::class, 'addStockForm'])->name('add-stock-form');
+        Route::post('/items/{item}/add-stock', [\App\Http\Controllers\PurchaseDepartmentController::class, 'addStock'])->name('add-stock');
+        Route::get('/bulk-add-stock', [\App\Http\Controllers\PurchaseDepartmentController::class, 'bulkAddStockForm'])->name('bulk-add-stock-form');
+        Route::post('/bulk-add-stock', [\App\Http\Controllers\PurchaseDepartmentController::class, 'bulkAddStock'])->name('bulk-add-stock');
+        Route::get('/items/{item}/stock-history', [\App\Http\Controllers\PurchaseDepartmentController::class, 'stockHistory'])->name('stock-history');
+    });
 });
 // Remove duplicate Auth::routes and legacy /home

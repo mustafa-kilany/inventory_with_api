@@ -59,6 +59,32 @@
     </div>
 </div>
 
+{{-- Charts Section for Approvers --}}
+@if(isset($chart_data))
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-pie-chart"></i> Request Priority Distribution</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="approverPriorityChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-graph-up"></i> Monthly Request Trends</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="approverMonthlyTrendsChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
+
 @if($urgent_requests->count() > 0)
 <div class="row mb-4">
     <div class="col-12">

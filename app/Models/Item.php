@@ -61,6 +61,21 @@ class Item extends Model
         $this->save();
     }
 
+    public function addStockByPurchaseDepartment(int $quantity, $user, string $notes = null): void
+    {
+        $this->updateStock($quantity, 'add');
+        
+        // Create stock transaction for tracking
+        StockTransaction::createStockIn(
+            $this,
+            $quantity,
+            $user,
+            'purchase_department',
+            null,
+            $notes ?? "Stock added by Purchase Department"
+        );
+    }
+
     public function canFulfill(int $requestedQuantity): bool
     {
         return $this->quantity_on_hand >= $requestedQuantity;

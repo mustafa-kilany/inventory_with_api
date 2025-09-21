@@ -29,6 +29,9 @@ class DashboardController extends Controller
             $data = array_merge($data, $this->getAdministratorDashboardData($user));
         }
 
+        // Add chart data for all roles
+        $data['chart_data'] = $this->getChartData();
+
         return view('dashboard', $data);
     }
 
@@ -144,6 +147,62 @@ class DashboardController extends Controller
                 ->orderBy('transaction_date', 'desc')
                 ->limit(10)
                 ->get(),
+        ];
+    }
+
+    private function getChartData()
+    {
+        // Urgent requests by priority
+        $urgentRequestsData = [
+            'urgent' => PurchaseRequest::where('priority', 'urgent')->count(),
+            'high' => PurchaseRequest::where('priority', 'high')->count(),
+            'medium' => PurchaseRequest::where('priority', 'medium')->count(),
+            'low' => PurchaseRequest::where('priority', 'low')->count(),
+        ];
+
+        // Stock status distribution
+        $stockStatusData = [
+            'in_stock' => Item::active()->where('quantity_on_hand', '>', 0)->count(),
+            'low_stock' => Item::active()->lowStock()->count(),
+            'out_of_stock' => Item::active()->outOfStock()->count(),
+        ];
+
+        // Request status distribution
+        $requestStatusData = [
+            'pending' => PurchaseRequest::pending()->count(),
+            'approved' => PurchaseRequest::approved()->count(),
+            'fulfilled' => PurchaseRequest::fulfilled()->count(),
+            'rejected' => PurchaseRequest::rejected()->count(),
+        ];
+
+        // Monthly request trends (last 6 months)
+        $monthlyTrends = [];
+        for ($i = 5; $i >= 0; $i--) {
+            $date = now()->subMonths($i);
+            $monthlyTrends[] = [
+                'month' => $date->format('M Y'),
+                'requests' => PurchaseRequest::whereYear('created_at', $date->year)
+                    ->whereMonth('created_at', $date->month)
+                    ->count(),
+            ];
+        }
+
+        // Top categories by item count
+        $categoryData = Item::active()
+            ->selectRaw('category, count(*) as count')
+            ->groupBy('category')
+            ->orderBy('count', 'desc')
+            ->limit(5)
+            ->get()
+            ->pluck('count', 'category')
+            ->toArray();
+
+        return [
+            'urgent_requests' => $urgentRequestsData,
+            'stock_status' => $stockStatusData,
+            'request_status' => $requestStatusData,
+            'monthly_trends' => $monthlyTrends,
+            'categories' => $categoryData,
         ];
     }
 }

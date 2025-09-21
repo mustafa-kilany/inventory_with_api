@@ -267,6 +267,123 @@
                         </div>
                     @endif
 
+                    {{-- Out-of-Stock Information for Department Head --}}
+                    @if($purchaseRequest->workflow_type === 'out_of_stock' && $purchaseRequest->workflow_status === 'pending_department_head')
+                        <div class="card mb-4">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Out-of-Stock Items</h5>
+                                <span class="badge bg-warning">Requires Purchase Department</span>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted mb-3">
+                                    <i class="bi bi-info-circle"></i> 
+                                    These items are currently out of stock. After your approval, the request will be sent to the Purchase Department to add stock.
+                                </p>
+                                
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Item</th>
+                                                <th>Current Stock</th>
+                                                <th>Requested Qty</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($purchaseRequest->items as $item)
+                                                <tr>
+                                                    <td>
+                                                        <strong>{{ $item->item->name }}</strong>
+                                                        <br><small class="text-muted">SKU: {{ $item->item->sku }}</small>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge bg-{{ $item->item->quantity_on_hand > 0 ? 'success' : 'danger' }}">
+                                                            {{ $item->item->quantity_on_hand }}
+                                                        </span>
+                                                    </td>
+                                                    <td>{{ $item->quantity_requested }}</td>
+                                                    <td>
+                                                        <span class="badge bg-warning">
+                                                            Out of Stock
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+
+                    {{-- Stock Addition for Purchase Department --}}
+                    @if(auth()->user()->canApproveAsPurchaseDepartment() && $purchaseRequest->workflow_status === 'pending_purchase_department')
+                        <div class="card mb-4">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0"><i class="bi bi-plus-circle"></i> Add Stock to Items</h5>
+                                <span class="badge bg-info">Purchase Department Action</span>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted mb-3">
+                                    <i class="bi bi-lightbulb"></i> 
+                                    Add stock to the requested items. After adding stock, the request will automatically go to the Stock Keeper for fulfillment.
+                                </p>
+                                
+                                <form method="POST" action="{{ route('purchase-requests.add-stock', $purchaseRequest) }}">
+                                    @csrf
+                                    <div class="table-responsive mb-3">
+                                        <table class="table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Item</th>
+                                                    <th>Current Stock</th>
+                                                    <th>Requested Qty</th>
+                                                    <th>Add Stock</th>
+                                                    <th>Notes</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach($purchaseRequest->items as $item)
+                                                    <tr>
+                                                        <td>
+                                                            <strong>{{ $item->item->name }}</strong>
+                                                            <br><small class="text-muted">SKU: {{ $item->item->sku }}</small>
+                                                        </td>
+                                                        <td>
+                                                            <span class="badge bg-{{ $item->item->quantity_on_hand > 0 ? 'success' : 'danger' }}">
+                                                                {{ $item->item->quantity_on_hand }}
+                                                            </span>
+                                                        </td>
+                                                        <td>{{ $item->quantity_requested }}</td>
+                                                        <td>
+                                                            <input type="hidden" name="stock_additions[{{ $loop->index }}][item_id]" value="{{ $item->item_id }}">
+                                                            <input type="number" name="stock_additions[{{ $loop->index }}][quantity]" 
+                                                                   class="form-control" min="0" 
+                                                                   value="{{ max(0, $item->quantity_requested - $item->item->quantity_on_hand) }}">
+                                                        </td>
+                                                        <td>
+                                                            <input type="text" name="stock_additions[{{ $loop->index }}][notes]" 
+                                                                   class="form-control" placeholder="Optional notes">
+                                                        </td>
+                                                    </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <button type="submit" class="btn btn-info">
+                                            <i class="bi bi-plus-circle"></i> Add Stock
+                                        </button>
+                                        <button type="button" class="btn btn-success" onclick="approveRequest()">
+                                            <i class="bi bi-check-circle"></i> Approve Request
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    @endif
+
                     @if(auth()->user()->can('fulfill purchase requests') && $purchaseRequest->status === 'approved')
                         <div class="card mb-4">
                             <div class="card-header">

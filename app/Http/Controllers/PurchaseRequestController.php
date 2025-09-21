@@ -410,7 +410,7 @@ class PurchaseRequestController extends Controller
         ]);
 
         if ($purchaseRequest->approveByPurchaseDepartment(Auth::user(), $request->approval_notes)) {
-            return back()->with('success', 'Request fully approved by Purchase Department!');
+            return back()->with('success', 'Request approved by Purchase Department! Moving to next approval step.');
         }
 
         return back()->with('error', 'Unable to approve at this stage.');
@@ -434,6 +434,44 @@ class PurchaseRequestController extends Controller
         }
 
         return back()->with('error', 'Unable to approve at this stage.');
+    }
+
+    /**
+     * Add stock to items by Purchase Department
+     */
+    public function addStockToItems(Request $request, PurchaseRequest $purchaseRequest)
+    {
+        if (!Auth::user()->canApproveAsPurchaseDepartment()) {
+            abort(403, 'You do not have permission to add stock as purchase department.');
+        }
+
+        $request->validate([
+            'stock_additions' => 'required|array',
+            'stock_additions.*.item_id' => 'required|exists:items,id',
+            'stock_additions.*.quantity' => 'required|integer|min:1',
+            'stock_additions.*.notes' => 'nullable|string|max:500',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            foreach ($request->stock_additions as $addition) {
+                $item = Item::findOrFail($addition['item_id']);
+                $item->addStockByPurchaseDepartment(
+                    $addition['quantity'],
+                    Auth::user(),
+                    $addition['notes'] ?? "Stock added for purchase request: {$purchaseRequest->request_number}"
+                );
+            }
+
+            DB::commit();
+
+            return back()->with('success', 'Stock successfully added to items! You can now approve the request.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'An error occurred while adding stock: ' . $e->getMessage());
+        }
     }
 
     /**

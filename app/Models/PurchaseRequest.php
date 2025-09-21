@@ -253,8 +253,8 @@ class PurchaseRequest extends Model
             $this->approval_chain = ['department_head', 'stock_keeper'];
             $this->workflow_status = 'pending_department_head';
         } else {
-            // Out of stock: Department Head → Manager → Purchase Department
-            $this->approval_chain = ['department_head', 'manager', 'purchase_department'];
+            // Out of stock: Department Head → Purchase Department → Stock Keeper
+            $this->approval_chain = ['department_head', 'purchase_department', 'stock_keeper'];
             $this->workflow_status = 'pending_department_head';
         }
         
@@ -277,7 +277,8 @@ class PurchaseRequest extends Model
         if ($this->workflow_type === 'in_stock') {
             $this->workflow_status = 'pending_stock_keeper';
         } else {
-            $this->workflow_status = 'pending_manager';
+            // For out of stock items, go to Purchase Department
+            $this->workflow_status = 'pending_purchase_department';
         }
 
         $this->save();
@@ -309,8 +310,13 @@ class PurchaseRequest extends Model
         $this->purchase_department_id = $purchaseDept->id;
         $this->purchase_department_approved_at = now();
         $this->purchase_department_notes = $notes;
-        $this->workflow_status = 'approved';
-        $this->status = 'approved';
+        $this->current_approval_step = 2;
+
+        // Automatically add stock for out-of-stock items
+        $this->autoStockItems($purchaseDept);
+        
+        // Move to Stock Keeper for fulfillment
+        $this->workflow_status = 'pending_stock_keeper';
         
         $this->save();
         return true;
@@ -330,6 +336,24 @@ class PurchaseRequest extends Model
         
         $this->save();
         return true;
+    }
+
+    /**
+     * Automatically add stock to items when Department Head approves out-of-stock requests
+     */
+    public function autoStockItems(User $departmentHead): void
+    {
+        foreach ($this->items as $requestItem) {
+            $item = $requestItem->item;
+            $quantityNeeded = $requestItem->quantity_requested;
+            
+            // Add the exact quantity needed to fulfill the request
+            $item->addStockByPurchaseDepartment(
+                $quantityNeeded,
+                $departmentHead,
+                "Auto-stocked upon Department Head approval for request: {$this->request_number}"
+            );
+        }
     }
 
     public function rejectWorkflow(User $rejector, string $reason): bool

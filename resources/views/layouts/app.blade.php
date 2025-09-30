@@ -79,6 +79,21 @@
                                     <i class="bi bi-cart-plus"></i> Purchase Requests
                                 </a>
                             </li>
+                            @if(auth()->user()->hasRole('purchase_department'))
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ route('purchase-requests.index', ['owner_only' => 1, 'workflow_status' => 'pending_owner']) }}">
+                                    <i class="bi bi-inbox"></i> Requests Sent to Owner
+                                </a>
+                            </li>
+                            @endif
+
+                            @if(auth()->user()->hasRole('owner'))
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ route('purchase-requests.index', ['workflow_status' => 'pending_stock_keeper']) }}">
+                                    <i class="bi bi-box-seam"></i> Stocking Approvals
+                                </a>
+                            </li>
+                            @endif
                             @can('view stock transactions')
                             <li class="nav-item">
                                 <a class="nav-link" href="{{ route('stock-transactions.index') }}">

@@ -66,14 +66,16 @@
     <script src="{{ asset('js/role-dashboard-charts.js') }}"></script>
     @endif
 
-    @if(auth()->user()->isEmployee())
-        @include('dashboard.employee')
-    @elseif(auth()->user()->isApprover())
-        @include('dashboard.approver')
-    @elseif(auth()->user()->isStockKeeper())
-        @include('dashboard.stock-keeper')
-    @elseif(auth()->user()->isAdministrator())
-        @include('dashboard.administrator')
-    @endif
+    @if($user->hasRole('owner'))
+    @include('dashboard.owner')
+@elseif($user->isAdministrator())
+    @include('dashboard.administrator')
+@elseif($user->isStockKeeper())
+    @include('dashboard.stock-keeper')
+@elseif($user->isApprover())
+    @include('dashboard.approver')
+@elseif($user->isEmployee())
+    @include('dashboard.employee')
+@endif
 </div>
 @endsection

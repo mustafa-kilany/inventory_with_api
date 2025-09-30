@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ config('app.name', 'Inventory System') }}</title>
     
     <!-- Bootstrap CSS -->
@@ -80,8 +80,8 @@
             margin-bottom: 1rem;
             border-radius: 0 8px 8px 0;
         }
-    </style>
-</head>
+            </style>
+    </head>
 <body>
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-light navbar-custom fixed-top">
@@ -125,7 +125,7 @@
                 </ul>
             </div>
         </div>
-    </nav>
+                </nav>
 
     <!-- Hero Section -->
     <section class="hero-section">
@@ -408,5 +408,5 @@
             }
         });
     </script>
-</body>
+    </body>
 </html>

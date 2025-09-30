@@ -19,7 +19,7 @@
             <div class="card mb-4">
                 <div class="card-body">
                     <form method="GET" action="{{ route('purchase-requests.index') }}" class="row g-3">
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <label for="status" class="form-label">Status</label>
                             <select name="status" id="status" class="form-select">
                                 <option value="">All Statuses</option>
@@ -30,7 +30,7 @@
                                 <option value="cancelled" {{ request('status') === 'cancelled' ? 'selected' : '' }}>Cancelled</option>
                             </select>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <label for="priority" class="form-label">Priority</label>
                             <select name="priority" id="priority" class="form-select">
                                 <option value="">All Priorities</option>
@@ -40,7 +40,20 @@
                                 <option value="urgent" {{ request('priority') === 'urgent' ? 'selected' : '' }}>Urgent</option>
                             </select>
                         </div>
-                        <div class="col-md-4 d-flex align-items-end">
+                        <div class="col-md-3">
+                            <label for="workflow_status" class="form-label">Workflow Status</label>
+                            <select name="workflow_status" id="workflow_status" class="form-select">
+                                <option value="">All Workflow Stages</option>
+                                <option value="pending_department_head" {{ request('workflow_status') === 'pending_department_head' ? 'selected' : '' }}>Pending Department Head</option>
+                                <option value="pending_purchase_department" {{ request('workflow_status') === 'pending_purchase_department' ? 'selected' : '' }}>Pending Purchase Department</option>
+                                <option value="pending_owner" {{ request('workflow_status') === 'pending_owner' ? 'selected' : '' }}>Pending Owner</option>
+                                <option value="pending_purchase_execution" {{ request('workflow_status') === 'pending_purchase_execution' ? 'selected' : '' }}>Pending Purchase Execution</option>
+                                <option value="pending_stock_keeper" {{ request('workflow_status') === 'pending_stock_keeper' ? 'selected' : '' }}>Pending Stock Keeper</option>
+                                <option value="approved" {{ request('workflow_status') === 'approved' ? 'selected' : '' }}>Approved</option>
+                                <option value="rejected" {{ request('workflow_status') === 'rejected' ? 'selected' : '' }}>Rejected</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
                             <button type="submit" class="btn btn-outline-primary me-2">
                                 <i class="bi bi-funnel"></i> Filter
                             </button>
@@ -51,6 +64,20 @@
                     </form>
                 </div>
             </div>
+
+            {{-- Owner Tab Quick Filter --}}
+            @if(auth()->user()->hasRole('owner') || auth()->user()->hasRole('administrator'))
+                <ul class="nav nav-tabs mb-3">
+                    <li class="nav-item">
+                        <a class="nav-link {{ !request('owner_only') ? 'active' : '' }}" href="{{ route('purchase-requests.index') }}">All</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ request('owner_only') ? 'active' : '' }}" href="{{ route('purchase-requests.index', array_merge(request()->except('page'), ['owner_only' => 1, 'workflow_status' => 'pending_owner'])) }}">
+                            <i class="bi bi-person-badge"></i> Owner Approvals
+                        </a>
+                    </li>
+                </ul>
+            @endif
 
             {{-- Alerts --}}
             @if(session('success'))

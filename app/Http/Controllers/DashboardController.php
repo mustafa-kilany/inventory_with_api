@@ -19,16 +19,17 @@ class DashboardController extends Controller
             'user' => $user,
         ];
 
-        if ($user->isEmployee()) {
-            $data = array_merge($data, $this->getEmployeeDashboardData($user));
-        } elseif ($user->isApprover()) {
-            $data = array_merge($data, $this->getApproverDashboardData($user));
-        } elseif ($user->isStockKeeper()) {
-            $data = array_merge($data, $this->getStockKeeperDashboardData($user));
-        } elseif ($user->isAdministrator()) {
-            $data = array_merge($data, $this->getAdministratorDashboardData($user));
-        }
-
+if ($user->isEmployee()) {
+        $data = array_merge($data, $this->getEmployeeDashboardData($user));
+    } elseif ($user->isApprover()) {
+        $data = array_merge($data, $this->getApproverDashboardData($user));
+    } elseif ($user->isStockKeeper()) {
+        $data = array_merge($data, $this->getStockKeeperDashboardData($user));
+    } elseif ($user->hasRole('owner')) {  // ADD THIS
+        $data = array_merge($data, $this->getOwnerDashboardData($user));
+    } elseif ($user->isAdministrator()) {
+        $data = array_merge($data, $this->getAdministratorDashboardData($user));
+    }
         // Add chart data for all roles
         $data['chart_data'] = $this->getChartData();
 
@@ -205,4 +206,33 @@ class DashboardController extends Controller
             'categories' => $categoryData,
         ];
     }
+
+
+    private function getOwnerDashboardData($user)
+{
+    return [
+        'pending_owner_requests' => PurchaseRequest::where('workflow_status', 'pending_owner')
+            ->with(['requestedBy', 'purchaseDepartment', 'items.item'])
+            ->orderBy('created_at', 'asc')
+            ->get(),
+        'pending_count' => PurchaseRequest::where('workflow_status', 'pending_owner')->count(),
+        'total_pending_value' => PurchaseRequest::where('workflow_status', 'pending_owner')
+            ->sum('actual_total'),
+        'recent_approved' => PurchaseRequest::where('owner_id', $user->id)
+            ->whereNotNull('owner_approved_at')
+            ->with(['requestedBy', 'items.item'])
+            ->orderBy('owner_approved_at', 'desc')
+            ->limit(5)
+            ->get(),
+        'stats' => [
+            'total_requests_for_owner' => PurchaseRequest::where('workflow_status', 'pending_owner')->count(),
+            'urgent_requests' => PurchaseRequest::where('workflow_status', 'pending_owner')
+                ->where('priority', 'urgent')->count(),
+            'overdue_requests' => PurchaseRequest::where('workflow_status', 'pending_owner')
+                ->where('needed_by', '<', now())->count(),
+        ]
+    ];
+}
+
+
 }

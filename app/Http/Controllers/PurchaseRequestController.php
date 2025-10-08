@@ -26,7 +26,9 @@ class PurchaseRequestController extends Controller
             });
         } elseif ($user->hasRole('stock_keeper')) {
             $query->where(function($q) use ($user) {
-                $q->where('status','approved')->orWhere('fulfilled_by',$user->id);
+                $q->where('workflow_status', 'pending_stock_keeper')  // Show requests waiting for stock keeper
+                  ->orWhere('status', 'approved')                    // Show approved requests
+                  ->orWhere('fulfilled_by', $user->id);             // Show requests fulfilled by this keeper
             });
         }
 

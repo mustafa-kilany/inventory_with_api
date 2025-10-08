@@ -7,7 +7,7 @@
 
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h1>
-                    <i class="bi bi-plus-circle"></i> Bulk Add Stock
+                    <i class="bi bi-send"></i> Create Stock Request (Bulk)
                 </h1>
                 <a href="{{ route('purchase-department.index') }}" class="btn btn-outline-secondary">
                     <i class="bi bi-arrow-left"></i> Back to Inventory
@@ -61,7 +61,7 @@
             <div class="card">
                 <div class="card-header">
                     <h5 class="mb-0">
-                        <i class="bi bi-list-ul"></i> Add Stock to Multiple Items
+                        <i class="bi bi-list-ul"></i> Request Stock for Multiple Items
                     </h5>
                 </div>
                 <div class="card-body">
@@ -192,8 +192,9 @@
                                 </button>
                             @else
                                 <button type="submit" class="btn btn-primary" id="submit-btn" disabled>
-                                    <i class="bi bi-plus-circle"></i> Add Stock to Selected Items
+                                    <i class="bi bi-send"></i> Send to Owner
                                 </button>
+                                <small class="text-muted">Owner approval required before stock can be added.</small>
                             @endif
                             <button type="button" class="btn btn-outline-secondary" onclick="clearAll()">
                                 <i class="bi bi-x-circle"></i> Clear All

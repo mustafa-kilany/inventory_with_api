@@ -23,7 +23,6 @@ use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Filters\DateFilter;
 
 class StockTransactionResource extends Resource
 {
@@ -184,7 +183,31 @@ class StockTransactionResource extends Resource
                         'damage' => 'Damage',
                         'other' => 'Other',
                     ]),
-                DateFilter::make('transaction_date'),
+                SelectFilter::make('transaction_date')
+                    ->label('Transaction Date')
+                    ->options([
+                        'today' => 'Today',
+                        'yesterday' => 'Yesterday',
+                        'this_week' => 'This Week',
+                        'last_week' => 'Last Week',
+                        'this_month' => 'This Month',
+                        'last_month' => 'Last Month',
+                    ])
+                    ->query(function ($query, array $data) {
+                        if (!$data['value']) {
+                            return $query;
+                        }
+                        
+                        return match ($data['value']) {
+                            'today' => $query->whereDate('transaction_date', today()),
+                            'yesterday' => $query->whereDate('transaction_date', now()->subDay()),
+                            'this_week' => $query->whereBetween('transaction_date', [now()->startOfWeek(), now()->endOfWeek()]),
+                            'last_week' => $query->whereBetween('transaction_date', [now()->subWeek()->startOfWeek(), now()->subWeek()->endOfWeek()]),
+                            'this_month' => $query->whereMonth('transaction_date', now()->month)->whereYear('transaction_date', now()->year),
+                            'last_month' => $query->whereMonth('transaction_date', now()->subMonth()->month)->whereYear('transaction_date', now()->subMonth()->year),
+                            default => $query,
+                        };
+                    }),
             ])
             ->recordActions([
                 EditAction::make(),

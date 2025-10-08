@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use App\Models\Item;
 use App\Models\StockTransaction;
 use App\Models\PurchaseRequest; // NEW: needed for Owner handoff
@@ -101,20 +102,16 @@ class PurchaseDepartmentController extends Controller
 
                 // Test/debug: log and flash queue size
                 $pendingCount = PurchaseRequest::where('workflow_status', PurchaseRequest::WORKFLOW_PENDING_OWNER)->count();
-                \Log::info('[TEST] PD created stock-add PR and sent to Owner', [
+                Log::info('[TEST] PD created stock-add PR and sent to Owner', [
                     'pr_id' => $pr->id,
                     'request_number' => $pr->request_number,
                     'workflow_status' => $pr->workflow_status,
                     'pending_owner_count' => $pendingCount,
                 ]);
-
                 DB::commit();
 
-                return redirect()->route('purchase-requests.index', [
-                    'owner_only' => 1,
-                    'workflow_status' => 'pending_owner'
-                ])->with('success', 'Stock addition request created and sent to Owner.')
-                  ->with('debug_test', "[TEST] PR #{$pr->request_number} pending_owner. Queue size: {$pendingCount}");
+                return back()->with('success', "Stock addition request created and sent to Owner. Request #{$pr->request_number} is now pending owner approval.")
+                             ->with('debug_test', "[TEST] PR #{$pr->request_number} pending_owner. Queue size: {$pendingCount}");
             }
 
             // If this stock addition is tied to a Purchase Request, enforce workflow:
@@ -132,19 +129,16 @@ class PurchaseDepartmentController extends Controller
                     $pr->save();
                     // Test/debug: log and flash queue size
                     $pendingCount = PurchaseRequest::where('workflow_status', PurchaseRequest::WORKFLOW_PENDING_OWNER)->count();
-                    \Log::info('[TEST] PD auto-sent existing PR to Owner', [
+                    Log::info('[TEST] PD auto-sent existing PR to Owner', [
                         'pr_id' => $pr->id,
                         'request_number' => $pr->request_number,
                         'workflow_status' => $pr->workflow_status,
                         'pending_owner_count' => $pendingCount,
                     ]);
-                    DB::commit();
-                    // Redirect PD user to the Owner queue so they immediately see it listed
-                    return redirect()->route('purchase-requests.index', [
-                        'owner_only' => 1,
-                        'workflow_status' => 'pending_owner'
-                    ])->with('success', 'Request sent to Owner and is now visible under Requests Sent to Owner.')
-                      ->with('debug_test', "[TEST] PR #{$pr->request_number} pending_owner. Queue size: {$pendingCount}");
+                                        DB::commit();
+                                        // Stay on the same page for PD users; flash success so they can continue their work.
+                                        return back()->with('success', 'Request sent to Owner and is now visible under Requests Sent to Owner.')
+                                                                 ->with('debug_test', "[TEST] PR #{$pr->request_number} pending_owner. Queue size: {$pendingCount}");
                 }
                 if ($pr->workflow_status !== PurchaseRequest::WORKFLOW_PENDING_PURCHASE_EXECUTION) {
                     DB::rollBack();
@@ -223,18 +217,16 @@ class PurchaseDepartmentController extends Controller
                     $pr->save();
                     // Test/debug: log and flash queue size
                     $pendingCount = PurchaseRequest::where('workflow_status', PurchaseRequest::WORKFLOW_PENDING_OWNER)->count();
-                    \Log::info('[TEST] PD auto-sent existing PR to Owner (bulk)', [
+                    Log::info('[TEST] PD auto-sent existing PR to Owner (bulk)', [
                         'pr_id' => $pr->id,
                         'request_number' => $pr->request_number,
                         'workflow_status' => $pr->workflow_status,
                         'pending_owner_count' => $pendingCount,
                     ]);
-                    DB::commit();
-                    return redirect()->route('purchase-requests.index', [
-                        'owner_only' => 1,
-                        'workflow_status' => 'pending_owner'
-                    ])->with('success', 'Request sent to Owner and is now visible under Requests Sent to Owner.')
-                      ->with('debug_test', "[TEST] PR #{$pr->request_number} pending_owner. Queue size: {$pendingCount}");
+                                        DB::commit();
+                                        // Stay on the current page and flash a success message for PD users
+                                        return back()->with('success', 'Request sent to Owner and is now visible under Requests Sent to Owner.')
+                                                                 ->with('debug_test', "[TEST] PR #{$pr->request_number} pending_owner. Queue size: {$pendingCount}");
                 }
                 if ($pr->workflow_status !== PurchaseRequest::WORKFLOW_PENDING_PURCHASE_EXECUTION) {
                     DB::rollBack();
@@ -242,6 +234,70 @@ class PurchaseDepartmentController extends Controller
                 }
             }
 
+            // If no purchase_request_id provided, instead of immediately adding stock,
+            // create a PurchaseRequest and send it to Owner for approval.
+            if (!$purchaseRequestId) {
+                $selected = $request->input('selected_items', []);
+                $additions = $request->input('stock_additions', []);
+
+                if (empty($selected) || empty($additions)) {
+                    DB::rollBack();
+                    return back()->with('error', 'No items selected for stock request.');
+                }
+
+                $pr = new PurchaseRequest();
+                $pr->requested_by  = Auth::id();
+                $pr->justification = $request->input('bulk_notes') ?? 'Bulk stock addition request';
+                $pr->priority      = 'medium';
+                $pr->status        = PurchaseRequest::STATUS_PENDING;
+                $pr->save();
+
+                $estimatedTotal = 0;
+                foreach ($selected as $itemId) {
+                    $addition = $additions[$itemId] ?? null;
+                    if (!$addition) continue;
+                    $qty = (int) ($addition['quantity'] ?? 0);
+                    if ($qty <= 0) continue;
+
+                    $unitPrice = isset($addition['unit_price']) && $addition['unit_price'] !== '' ? (float)$addition['unit_price'] : (float) (Item::find($itemId)?->unit_price ?? 0);
+
+                    \App\Models\PurchaseRequestItem::create([
+                        'purchase_request_id' => $pr->id,
+                        'item_id'             => $itemId,
+                        'quantity_requested'  => $qty,
+                        'unit_price'          => $unitPrice,
+                        'total_price'         => $unitPrice * $qty,
+                        'notes'               => $addition['notes'] ?? null,
+                    ]);
+
+                    $estimatedTotal += $unitPrice * $qty;
+                }
+
+                // Totals and workflow
+                $pr->estimated_total = $estimatedTotal;
+                $pr->workflow_type = PurchaseRequest::WORKFLOW_TYPE_OUT_OF_STOCK;
+                $pr->approval_chain = ['purchase_department','owner','purchase_execution','stock_keeper'];
+                $pr->current_approval_step = 1; // PD done / PD created the request
+                $pr->purchase_department_id = Auth::id();
+                $pr->purchase_department_approved_at = now();
+                $pr->workflow_status = PurchaseRequest::WORKFLOW_PENDING_OWNER;
+                $pr->save();
+
+                $pendingCount = PurchaseRequest::where('workflow_status', PurchaseRequest::WORKFLOW_PENDING_OWNER)->count();
+                    Log::info('[TEST] PD created bulk stock-add PR and sent to Owner', [
+                    'pr_id' => $pr->id,
+                    'request_number' => $pr->request_number,
+                    'workflow_status' => $pr->workflow_status,
+                    'pending_owner_count' => $pendingCount,
+                ]);
+
+                DB::commit();
+                    // Return back to the bulk page and flash success; do not redirect PD to Owner queue.
+                    return back()->with('success', "Bulk stock addition request created and sent to Owner. Request #{$pr->request_number} is now pending owner approval.")
+                                 ->with('debug_test', "[TEST] PR #{$pr->request_number} pending_owner. Queue size: {$pendingCount}");
+            }
+
+            // If we reached here, purchase_request_id was provided and allowed to proceed
             $addedItems    = [];
             $totalQuantity = 0;
 

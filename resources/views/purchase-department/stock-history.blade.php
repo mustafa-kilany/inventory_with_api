@@ -8,9 +8,9 @@
                 <h1>
                     <i class="bi bi-clock-history"></i> Stock History - {{ $item->name }}
                 </h1>
-                <div>
+                    <div>
                     <a href="{{ route('purchase-department.add-stock-form', $item) }}" class="btn btn-primary">
-                        <i class="bi bi-plus-circle"></i> Add Stock
+                        <i class="bi bi-send"></i> Send Request
                     </a>
                     <a href="{{ route('purchase-department.index') }}" class="btn btn-outline-secondary">
                         <i class="bi bi-arrow-left"></i> Back to Inventory
@@ -237,7 +237,7 @@
                             <h5 class="text-muted mt-3">No stock additions found</h5>
                             <p class="text-muted">This item hasn't had any stock added by the Purchase Department yet.</p>
                             <a href="{{ route('purchase-department.add-stock-form', $item) }}" class="btn btn-primary">
-                                <i class="bi bi-plus-circle"></i> Add Stock Now
+                                <i class="bi bi-send"></i> Send Request Now
                             </a>
                         </div>
                     @endif

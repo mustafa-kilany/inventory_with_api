@@ -25,7 +25,7 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">
-                        <i class="bi bi-plus-circle"></i> Add Stock - {{ $item->name }}
+                        <i class="bi bi-send"></i> Send Stock Request - {{ $item->name }}
                     </h5>
                     <a href="{{ route('purchase-department.index') }}" class="btn btn-outline-secondary">
                         <i class="bi bi-arrow-left"></i> Back to Inventory

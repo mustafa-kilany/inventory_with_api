@@ -13,12 +13,14 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Section;
-use Filament\Forms\Components\Toggle;
-use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
+use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\FileUpload;
+use Filament\Resources\Resource;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
@@ -102,6 +104,26 @@ class ItemResource extends Resource
                             ->default(true)
                             ->columnSpan(1),
                     ])->columns(2),
+                
+                Section::make('Wikidata Integration')
+                    ->description('External data from Wikidata knowledge base')
+                    ->schema([
+                        TextInput::make('wikidata_qid')
+                            ->label('Wikidata QID')
+                            ->placeholder('e.g., Q160137')
+                            ->helperText('Wikidata identifier (e.g., Q160137 for ballpoint pen)')
+                            ->maxLength(255)
+                            ->columnSpan(1),
+                        TextInput::make('image_url')
+                            ->label('Image URL')
+                            ->url()
+                            ->placeholder('https://commons.wikimedia.org/wiki/Special:FilePath/...')
+                            ->helperText('URL to Wikimedia Commons image or external image')
+                            ->maxLength(2048)
+                            ->columnSpan(1),
+                    ])->columns(2)
+                    ->collapsible()
+                    ->collapsed(),
             ]);
     }
 
@@ -137,6 +159,20 @@ class ItemResource extends Resource
                 TextColumn::make('location')
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true),
+                ImageColumn::make('image_url')
+                    ->label('Image')
+                    ->circular()
+                    ->size(40)
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->defaultImageUrl(url('/images/no-image.png')),
+                TextColumn::make('wikidata_qid')
+                    ->label('Wikidata QID')
+                    ->searchable()
+                    ->badge()
+                    ->color('info')
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->url(fn ($record) => $record->wikidata_qid ? "https://www.wikidata.org/wiki/{$record->wikidata_qid}" : null)
+                    ->openUrlInNewTab(),
                 IconColumn::make('is_active')
                     ->boolean(),
                 TextColumn::make('created_at')
@@ -157,6 +193,15 @@ class ItemResource extends Resource
                     ]),
                 TernaryFilter::make('is_active')
                     ->label('Active Status'),
+                TernaryFilter::make('wikidata_qid')
+                    ->label('Has Wikidata')
+                    ->nullable()
+                    ->trueLabel('With Wikidata')
+                    ->falseLabel('Without Wikidata')
+                    ->queries(
+                        true: fn ($query) => $query->whereNotNull('wikidata_qid'),
+                        false: fn ($query) => $query->whereNull('wikidata_qid'),
+                    ),
             ])
             ->recordActions([
                 EditAction::make(),

@@ -10,7 +10,7 @@
                 </h1>
                 <div>
                     <a href="{{ route('purchase-department.bulk-add-stock-form') }}" class="btn btn-primary">
-                        <i class="bi bi-plus-circle"></i> Bulk Add Stock
+                        <i class="bi bi-plus-circle"></i> Create Stock Request
                     </a>
                 </div>
             </div>
@@ -278,7 +278,7 @@
                                                 <div class="btn-group" role="group">
                                                     <a href="{{ route('purchase-department.add-stock-form', $item) }}" 
                                                        class="btn btn-sm btn-primary">
-                                                        <i class="bi bi-plus-circle"></i> Add Stock
+                                                        <i class="bi bi-send"></i> Send Request
                                                     </a>
                                                     <a href="{{ route('purchase-department.stock-history', $item) }}" 
                                                        class="btn btn-sm btn-outline-info">
